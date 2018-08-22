@@ -3,6 +3,7 @@
     _EmissionMap("Emission (RGB)", 2D) = "white" {}
     _shiftColor("Tiltshift Color", Color) = (0,0,0,1)
     _RGBSubPixelTex ("RGBSubPixelTex", 2D) = "white" {}
+    _LightmapEmissionScale("Lightmap Emission Scale", Float) = 1
     [HDR]_EmissionColor ("Emission Color", Color) = (1,1,1,1)
     _Glossiness ("Smoothness", Float) = 0.5
     [Toggle(APPLY_GAMMA)] _ApplyGamma("Apply Gamma", Float) = 0
@@ -18,8 +19,8 @@
  
             #include"UnityStandardMeta.cginc"
  
-            // sampler2D _EmissionMap;
-            // fixed4 _EmissionColor;
+
+            fixed _LightmapEmissionScale;
             float4 frag_meta2 (v2f_meta i): SV_Target
             {
                 // we're interested in diffuse & specular colors,
@@ -30,7 +31,7 @@
                 UNITY_INITIALIZE_OUTPUT(UnityMetaInput, o);
                 fixed4 c = tex2D (_EmissionMap, i.uv);
                 o.Albedo = fixed3(c.rgb * _EmissionColor.rgb);
-                o.Emission = fixed3(c.rgb * _EmissionColor.rgb);
+                o.Emission = fixed3(c.rgb * _EmissionColor.rgb) * _LightmapEmissionScale;
                 return UnityMetaFragment(o);
             }
            
