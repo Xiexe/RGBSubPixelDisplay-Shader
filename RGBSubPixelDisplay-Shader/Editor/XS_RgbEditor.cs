@@ -18,7 +18,7 @@ public class XS_RgbEditor : ShaderGUI
 	MaterialProperty _MainTex; //("Emissive (RGB)", 2D) = "white" {}
 	MaterialProperty _RGBSubPixelTex;
     MaterialProperty _shiftColor;//lTex ("RGBSubPixelTex", 2D) = "white" {}
-    MaterialProperty _EmissionColor; //("Emission Scale", Float) = 1
+    MaterialProperty _EmissionIntensity; //("Emission Scale", Float) = 1
     MaterialProperty _Glossiness; //("Emission (Lightmapper)", Float) = 1
     MaterialProperty _LightmapEmissionScale; //[Toggle] ("Dynamic Emission (Lightmapper)", Int) = 0
     MaterialProperty _ApplyGamma;//[Toggle(APPLY_GAMMA)] ("Apply Gamma", Float) = 0
@@ -33,7 +33,7 @@ public class XS_RgbEditor : ShaderGUI
 			_MainTex = ShaderGUI.FindProperty("_MainTex", props);
 			_RGBSubPixelTex = ShaderGUI.FindProperty("_RGBSubPixelTex", props);
 			_shiftColor	= ShaderGUI.FindProperty("_shiftColor", props);
-			_EmissionColor	= ShaderGUI.FindProperty("_EmissionColor", props);
+			_EmissionIntensity	= ShaderGUI.FindProperty("_EmissionIntensity", props);
 			_Glossiness	= ShaderGUI.FindProperty("_Glossiness", props);
 			_ApplyGamma	= ShaderGUI.FindProperty("_ApplyGamma", props);
 			_LightmapEmissionScale = ShaderGUI.FindProperty("_LightmapEmissionScale", props);
@@ -44,7 +44,7 @@ public class XS_RgbEditor : ShaderGUI
         {
 				//display all the settings
         	m_MaterialEditor.TexturePropertySingleLine(Styles.mainTex, _MainTex);
-            m_MaterialEditor.ShaderProperty(_EmissionColor, "Emission Scale", 2);
+            m_MaterialEditor.ShaderProperty(_EmissionIntensity, "Emission Scale", 2);
 			m_MaterialEditor.ShaderProperty(_LightmapEmissionScale, "Lightmap Emission Scale", 2);
 				// change the GI flag and fix it up with emissive as black if necessary
 				m_MaterialEditor.LightmapEmissionFlagsProperty(MaterialEditor.kMiniTextureFieldLabelIndentLevel, true);

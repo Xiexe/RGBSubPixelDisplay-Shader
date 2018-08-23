@@ -4,11 +4,16 @@
     _shiftColor("Tiltshift Color", Color) = (0,0,0,1)
     _RGBSubPixelTex ("RGBSubPixelTex", 2D) = "white" {}
     _LightmapEmissionScale("Lightmap Emission Scale", Float) = 1
-    _EmissionColor ("Screen Intensity", Float) = 1
+    _EmissionIntensity ("Screen Intensity", Float) = 1
+
+    
     _Glossiness ("Smoothness", Float) = 0.5
     _ColorCorrection ("Color Correction", Color) = (0,0,0,0)
     [Toggle(APPLY_GAMMA)] _ApplyGamma("Apply Gamma", Float) = 0
     [Toggle(HAS_ALPHA)] _UseAlphaOnPixel("Use Alpha Channel", Float) = 1
+
+    //needs to be here so the editor script stops throwing errors.
+    _EmissionColor ("Emission Color", Color) = (0,0,0,0)
   }
   SubShader {
 
@@ -25,13 +30,14 @@
       #pragma multi_compile APPLY_GAMMA_OFF APPLY_GAMMA
       #pragma multi_compile HAS_ALPHA_OFF HAS_ALPHA
 
-      float _EmissionColor;
+      float _EmissionIntensity;
       float _Glossiness;
       sampler2D _MainTex;
       sampler2D _RGBSubPixelTex;
       float4 _shiftColor;
       fixed _LightmapEmissionScale;
       float3 _ColorCorrection;
+      //float3 _EmissionColor;
 
       struct Input {
         float2 uv_MainTex;
@@ -73,7 +79,7 @@
 
         float3 pixelValue = float3(pixelR, pixelG, pixelB);
       //Do the color shift at extreme viewing angles
-        float3 screenCol = lerp(pixelValue * _EmissionColor, _shiftColor, max(0, (1-vdn * 1.2)));
+        float3 screenCol = lerp(pixelValue * _EmissionIntensity, _shiftColor, max(0, (1-vdn * 1.2)));
         
 
         #ifdef UNITY_PASS_META
