@@ -6,7 +6,9 @@
     _LightmapEmissionScale("Lightmap Emission Scale", Float) = 1
     _EmissionColor ("Screen Intensity", Float) = 1
     _Glossiness ("Smoothness", Float) = 0.5
+    _ColorCorrection ("Color Correction", Color) = (0,0,0,0)
     [Toggle(APPLY_GAMMA)] _ApplyGamma("Apply Gamma", Float) = 0
+    [Toggle(HAS_ALPHA)] _UseAlphaOnPixel("Use Alpha Channel", Float) = 1
   }
   SubShader {
 
@@ -21,6 +23,7 @@
       #pragma target 3.0
       #pragma shader_feature _EMISSION
       #pragma multi_compile APPLY_GAMMA_OFF APPLY_GAMMA
+      #pragma multi_compile HAS_ALPHA_OFF HAS_ALPHA
 
       float _EmissionColor;
       float _Glossiness;
@@ -28,6 +31,7 @@
       sampler2D _RGBSubPixelTex;
       float4 _shiftColor;
       fixed _LightmapEmissionScale;
+      float3 _ColorCorrection;
 
       struct Input {
         float2 uv_MainTex;
@@ -39,7 +43,7 @@
       void surf (Input IN, inout SurfaceOutputStandard o) {
         // emissive comes from texture
 
-        float4 e = tex2D (_MainTex, IN.uv_MainTex);
+			  fixed4 e = tex2D (_MainTex, IN.uv_MainTex);
 
        //viewing angle for tilt shift
         float3 viewDir = IN.viewDir;
@@ -55,25 +59,33 @@
         
       //Do RGB pixels
         float4 rgbpixel = tex2D(_RGBSubPixelTex, IN.uv_RGBSubPixelTex);
+
+        float pixa = rgbpixel.a; 
+
         float pixelR = rgbpixel.r * e.r;
         float pixelG = rgbpixel.g * e.g;
         float pixelB = rgbpixel.b * e.b;
+
+      //if the texture has an alpha
+        pixelR = lerp(0, pixelR, saturate(pixa + (e.r )));
+        pixelG = lerp(0, pixelG, saturate(pixa + (e.g )));
+        pixelB = lerp(0, pixelB, saturate(pixa + (e.b )));
+
         float3 pixelValue = float3(pixelR, pixelG, pixelB);
-      
       //Do the color shift at extreme viewing angles
-        float3 screenCol = lerp(pixelValue, _shiftColor, max(0, (1-vdn * 1.2)));
+        float3 screenCol = lerp(pixelValue * _EmissionColor, _shiftColor, max(0, (1-vdn * 1.2)));
         
 
         #ifdef UNITY_PASS_META
 				  float3 finalCol = e * _LightmapEmissionScale;
 		  	#else
-				  float3 finalCol = screenCol * _EmissionColor;
+				  float3 finalCol = screenCol / _ColorCorrection;
 		  	#endif
 
 
         o.Albedo = float4(0,0,0,1);
         o.Alpha = 1;
-        o.Emission = finalCol;//finalCol;
+        o.Emission = finalCol;
         o.Metallic = 0;
         o.Smoothness = _Glossiness;
       }
