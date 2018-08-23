@@ -15,7 +15,7 @@ public class XS_RgbEditor : ShaderGUI
     }
 
     //MaterialProperty albedoMap;
-	MaterialProperty _EmissionMap; //("Emissive (RGB)", 2D) = "white" {}
+	MaterialProperty _MainTex; //("Emissive (RGB)", 2D) = "white" {}
 	MaterialProperty _RGBSubPixelTex;
     MaterialProperty _shiftColor;//lTex ("RGBSubPixelTex", 2D) = "white" {}
     MaterialProperty _EmissionColor; //("Emission Scale", Float) = 1
@@ -29,7 +29,7 @@ public class XS_RgbEditor : ShaderGUI
         {
             //Find all the properties within the shader
 				// = ShaderGUI.FindProperty("", props);
-			_EmissionMap = ShaderGUI.FindProperty("_EmissionMap", props);
+			_MainTex = ShaderGUI.FindProperty("_MainTex", props);
 			_RGBSubPixelTex = ShaderGUI.FindProperty("_RGBSubPixelTex", props);
 			_shiftColor	= ShaderGUI.FindProperty("_shiftColor", props);
 			_EmissionColor	= ShaderGUI.FindProperty("_EmissionColor", props);
@@ -41,7 +41,8 @@ public class XS_RgbEditor : ShaderGUI
         EditorGUI.BeginChangeCheck();
         {
 				//display all the settings
-        	m_MaterialEditor.TexturePropertySingleLine(Styles.mainTex, _EmissionMap, _EmissionColor);
+        	m_MaterialEditor.TexturePropertySingleLine(Styles.mainTex, _MainTex);
+            m_MaterialEditor.ShaderProperty(_EmissionColor, "Emission Scale", 2);
 			m_MaterialEditor.ShaderProperty(_LightmapEmissionScale, "Lightmap Emission Scale", 2);
 				// change the GI flag and fix it up with emissive as black if necessary
 				m_MaterialEditor.LightmapEmissionFlagsProperty(MaterialEditor.kMiniTextureFieldLabelIndentLevel, true);
