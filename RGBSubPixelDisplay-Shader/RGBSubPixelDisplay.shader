@@ -1,18 +1,15 @@
 ﻿Shader "Xiexe/RGBSubPixelDisplay" {
   Properties {
     _MainTex("Emission (RGB)", 2D) = "white" {}
-    _shiftColor("Tiltshift Color", Color) = (0,0,0,1)
     _RGBSubPixelTex ("RGBSubPixelTex", 2D) = "white" {}
+    _Glossiness ("Smoothness", Float) = 0.5
+
+  //ALL OF THESE PROPERTIES ARE REQUIRED FOR THE CGINC TO WORK
+    _shiftColor("Tiltshift Color", Color) = (0,0,0,1)
     _LightmapEmissionScale("Lightmap Emission Scale", Float) = 1
     _EmissionIntensity ("Screen Intensity", Float) = 1
-    _Glossiness ("Smoothness", Float) = 0.5
-    
     [Toggle(APPLY_GAMMA)] _ApplyGamma("Apply Gamma", Float) = 0
     [Toggle] _Backlight("Backlit Panel", Int) = 0
-
-    //needs to be here so the editor script stops throwing errors.
-    _EmissionColor ("Emission Color", Color) = (0,0,0,0)
-    
     //Color Correction
     [Header(  Color Balance)]
     _Saturation ("Saturation", Range(0,1)) = 1
@@ -20,7 +17,13 @@
     _RedScale ("Red Scale", Range(-1,1)) = 1
     _GreenScale ("Green Scale", Range(-1,1)) = 1
     _BlueScale("Blue Scale", Range(-1,1)) = 1
-
+  //END OF REQUIRED PROPERTIES FOR CGINC
+    
+    
+    //needs to be here so the editor script stops throwing errors.
+    //You can ignore it, just don't delete it. It doesn't actually do anything,
+    //but without it, the editor script screams in pain. Hacky, I know.
+    _EmissionColor ("Emission Color", Color) = (0,0,0,0)
   }
   SubShader {
 
@@ -37,91 +40,33 @@
       #pragma multi_compile APPLY_GAMMA_OFF APPLY_GAMMA
       #pragma multi_compile HAS_ALPHA_OFF HAS_ALPHA
 
-      float _EmissionIntensity;
-      float _Glossiness;
+    //You will need to define your texture samplers yourself in other shaders
       sampler2D _MainTex;
       sampler2D _RGBSubPixelTex;
-      float4 _shiftColor;
-      fixed _LightmapEmissionScale;
-      float _Backlight;
 
-      //Color Correction
-      float _Saturation;
-      float _RedScale;
-      float _BlueScale;
-      float _GreenScale;
-      float _Contrast;
-
+      float _Glossiness;
+      
       struct Input {
         float2 uv_MainTex;
         float2 uv_RGBSubPixelTex;
         float3 viewDir;
         float3 worldNormal;
       };
-
+    //We need to include our CGINC file. This is important, otherwise you wont be able to call the function.
+    //If you're in a fragment shader, just include this right before the pixel/fragment program.
+      #include "RGBSubPixel.cginc"
+      
       void surf (Input IN, inout SurfaceOutputStandard o) {
-        // emissive comes from texture
-
-			  fixed4 e = tex2D (_MainTex, IN.uv_MainTex);
-
-       //viewing angle for tilt shift
+      
+      //We need to sample the world normal and the ViewDir outside of our CGInc
+      //So you'll need to do this part yourself in any shader you plug this into.
+        float3 worldNormal = WorldNormalVector(IN, IN.worldNormal);
         float3 viewDir = IN.viewDir;
-        float3 ase_worldNormal = WorldNormalVector( IN, IN.worldNormal );
-        float3 ase_vertexNormal = mul( unity_WorldToObject, float4( ase_worldNormal, 0 ) );
-			  float4 worldNormals = mul(unity_ObjectToWorld,float4( ase_vertexNormal , 0.0 ));
-        float vdn = dot(viewDir, worldNormals);
 
-      //correct for gamma if being used for a VRC Stream script.
-      //ONLY on stream panels, not video panels.
-        #if APPLY_GAMMA
-          e.rgb = pow(e.rgb,2.2);
-        #endif
-        
-      //handle saturation
-        float4 greyscalePixel = Luminance(e);
-        e = lerp(greyscalePixel, e, _Saturation);
-      //handle Contrast
-        e = pow(e, _Contrast);
-
-      //Do RGB pixels
-        float4 rgbpixel = tex2D(_RGBSubPixelTex, IN.uv_RGBSubPixelTex);
-
-        float backlight = dot(rgbpixel, 0.5);
-          backlight *= 0.005;
-          backlight = lerp(0, backlight, _Backlight);
-
-      //sample the main textures color channels to derive how strong any given subpixel should be, 
-      //and then adjust the intensity of the subpixel by the color correction values
-        float pixelR = ((_RedScale + rgbpixel.r) * rgbpixel.r ) * e.r;
-        float pixelG = ((_GreenScale + rgbpixel.g) * rgbpixel.g ) * e.g;
-        float pixelB = ((_BlueScale + rgbpixel.b) * rgbpixel.b ) * e.b;
-
-      //if the texture has an alpha, then use that to control how the subpixel lights up
-        pixelR = lerp(0, pixelR, saturate(rgbpixel.a + (e.r )));
-        pixelG = lerp(0, pixelG, saturate(rgbpixel.a + (e.g )));
-        pixelB = lerp(0, pixelB, saturate(rgbpixel.a + (e.b )));
-
-
-      //Add the backlight, if there is any
-        pixelR += backlight * rgbpixel.r;
-        pixelG += backlight * rgbpixel.g;
-        pixelB += backlight * rgbpixel.b;
-
-        float3 pixelValue = float3(pixelR, pixelG, pixelB);
-
-      //Do backlight if we have one.
-
-
-      //do the color shift at extreme viewing angles
-        float3 screenCol = lerp(pixelValue * _EmissionIntensity, _shiftColor, max(0, (1-vdn * 1.2)));
-        
-
-        #ifdef UNITY_PASS_META
-				  float3 finalCol = e * _LightmapEmissionScale;
-		  	#else
-				  float3 finalCol = screenCol;
-		  	#endif
-
+      //We need to call our function from the CGInc "RGBSubPixelConvert", 
+      //and then feed in our MainTex, our SubPixel Tex, 
+      //The UVs for both, the viewDir, and the WorldNormal.
+        float4 finalCol = RGBSubPixelConvert(_MainTex, _RGBSubPixelTex, IN.uv_MainTex, IN.uv_RGBSubPixelTex, viewDir, worldNormal);
 
         o.Albedo = float4(0,0,0,1);
         o.Alpha = 1;
