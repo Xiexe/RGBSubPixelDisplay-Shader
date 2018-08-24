@@ -8,12 +8,20 @@
 
     
     _Glossiness ("Smoothness", Float) = 0.5
-    _ColorCorrection ("Color Correction", Color) = (0,0,0,0)
+    
     [Toggle(APPLY_GAMMA)] _ApplyGamma("Apply Gamma", Float) = 0
-    [Toggle(HAS_ALPHA)] _UseAlphaOnPixel("Use Alpha Channel", Float) = 1
 
     //needs to be here so the editor script stops throwing errors.
     _EmissionColor ("Emission Color", Color) = (0,0,0,0)
+    
+    //Color Correction
+    [Header(  Color Balance)]
+    _Saturation ("Saturation", Range(0,1)) = 1
+    _Contrast ("Contrast", Range(0.01,2)) = 1
+    _RedScale ("Red Scale", Range(-1,1)) = 1
+    _GreenScale ("Green Scale", Range(-1,1)) = 1
+    _BlueScale("Blue Scale", Range(-1,1)) = 1
+
   }
   SubShader {
 
@@ -36,8 +44,13 @@
       sampler2D _RGBSubPixelTex;
       float4 _shiftColor;
       fixed _LightmapEmissionScale;
-      float3 _ColorCorrection;
-      //float3 _EmissionColor;
+
+      //Color Correction
+      float _Saturation;
+      float _RedScale;
+      float _BlueScale;
+      float _GreenScale;
+      float _Contrast;
 
       struct Input {
         float2 uv_MainTex;
@@ -58,34 +71,42 @@
 			  float4 worldNormals = mul(unity_ObjectToWorld,float4( ase_vertexNormal , 0.0 ));
         float vdn = dot(viewDir, worldNormals);
 
-      //Correct for gamma if being used for a VRC Stream script.
+      //correct for gamma if being used for a VRC Stream script.
+      //ONLY on stream panels, not video panels.
         #if APPLY_GAMMA
           e.rgb = pow(e.rgb,2.2);
         #endif
         
+      //handle saturation
+        float4 greyscalePixel = Luminance(e);
+        e = lerp(greyscalePixel, e, _Saturation);
+      //handle Contrast
+        e = pow(e, _Contrast);
+
       //Do RGB pixels
         float4 rgbpixel = tex2D(_RGBSubPixelTex, IN.uv_RGBSubPixelTex);
 
-        float pixa = rgbpixel.a; 
+      //sample the main textures color channels to derive how strong any given subpixel should be, 
+      //and then adjust the intensity of the subpixel by the color correction values
+        float pixelR = ((_RedScale + rgbpixel.r) * rgbpixel.r ) * e.r;
+        float pixelG = ((_GreenScale + rgbpixel.g) * rgbpixel.g ) * e.g;
+        float pixelB = ((_BlueScale + rgbpixel.b) * rgbpixel.b ) * e.b;
 
-        float pixelR = rgbpixel.r * e.r;
-        float pixelG = rgbpixel.g * e.g;
-        float pixelB = rgbpixel.b * e.b;
-
-      //if the texture has an alpha
-        pixelR = lerp(0, pixelR, saturate(pixa + (e.r )));
-        pixelG = lerp(0, pixelG, saturate(pixa + (e.g )));
-        pixelB = lerp(0, pixelB, saturate(pixa + (e.b )));
+      //if the texture has an alpha, then use that to control how the subpixel lights up
+        pixelR = lerp(0, pixelR, saturate(rgbpixel.a + (e.r )));
+        pixelG = lerp(0, pixelG, saturate(rgbpixel.a + (e.g )));
+        pixelB = lerp(0, pixelB, saturate(rgbpixel.a + (e.b )));
 
         float3 pixelValue = float3(pixelR, pixelG, pixelB);
-      //Do the color shift at extreme viewing angles
+      
+      //do the color shift at extreme viewing angles
         float3 screenCol = lerp(pixelValue * _EmissionIntensity, _shiftColor, max(0, (1-vdn * 1.2)));
         
 
         #ifdef UNITY_PASS_META
 				  float3 finalCol = e * _LightmapEmissionScale;
 		  	#else
-				  float3 finalCol = screenCol / _ColorCorrection;
+				  float3 finalCol = screenCol;
 		  	#endif
 
 
