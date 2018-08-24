@@ -5,11 +5,10 @@
     _RGBSubPixelTex ("RGBSubPixelTex", 2D) = "white" {}
     _LightmapEmissionScale("Lightmap Emission Scale", Float) = 1
     _EmissionIntensity ("Screen Intensity", Float) = 1
-
-    
     _Glossiness ("Smoothness", Float) = 0.5
     
     [Toggle(APPLY_GAMMA)] _ApplyGamma("Apply Gamma", Float) = 0
+    [Toggle] _Backlight("Backlit Panel", Int) = 0
 
     //needs to be here so the editor script stops throwing errors.
     _EmissionColor ("Emission Color", Color) = (0,0,0,0)
@@ -44,6 +43,7 @@
       sampler2D _RGBSubPixelTex;
       float4 _shiftColor;
       fixed _LightmapEmissionScale;
+      float _Backlight;
 
       //Color Correction
       float _Saturation;
@@ -86,6 +86,10 @@
       //Do RGB pixels
         float4 rgbpixel = tex2D(_RGBSubPixelTex, IN.uv_RGBSubPixelTex);
 
+        float backlight = dot(rgbpixel, 0.5);
+          backlight *= 0.005;
+          backlight = lerp(0, backlight, _Backlight);
+
       //sample the main textures color channels to derive how strong any given subpixel should be, 
       //and then adjust the intensity of the subpixel by the color correction values
         float pixelR = ((_RedScale + rgbpixel.r) * rgbpixel.r ) * e.r;
@@ -97,8 +101,17 @@
         pixelG = lerp(0, pixelG, saturate(rgbpixel.a + (e.g )));
         pixelB = lerp(0, pixelB, saturate(rgbpixel.a + (e.b )));
 
+
+      //Add the backlight, if there is any
+        pixelR += backlight * rgbpixel.r;
+        pixelG += backlight * rgbpixel.g;
+        pixelB += backlight * rgbpixel.b;
+
         float3 pixelValue = float3(pixelR, pixelG, pixelB);
-      
+
+      //Do backlight if we have one.
+
+
       //do the color shift at extreme viewing angles
         float3 screenCol = lerp(pixelValue * _EmissionIntensity, _shiftColor, max(0, (1-vdn * 1.2)));
         

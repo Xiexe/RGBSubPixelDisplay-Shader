@@ -27,6 +27,7 @@ public class XS_RgbEditor : ShaderGUI
     MaterialProperty _RedScale;
     MaterialProperty _GreenScale;
     MaterialProperty _BlueScale;
+    MaterialProperty _Backlight;
 
     public override void OnGUI(MaterialEditor m_MaterialEditor, MaterialProperty[] props)
     {
@@ -46,6 +47,7 @@ public class XS_RgbEditor : ShaderGUI
             _RedScale = ShaderGUI.FindProperty("_RedScale", props);
             _GreenScale = ShaderGUI.FindProperty("_GreenScale", props);
             _BlueScale = ShaderGUI.FindProperty("_BlueScale", props);
+            _Backlight = ShaderGUI.FindProperty("_Backlight", props);
         }
 
         EditorGUI.BeginChangeCheck();
@@ -61,6 +63,7 @@ public class XS_RgbEditor : ShaderGUI
      	EditorGUILayout.Space();
         EditorGUILayout.Space();             
             m_MaterialEditor.TexturePropertySingleLine(Styles.RGBMatrixTex, _RGBSubPixelTex);
+            m_MaterialEditor.ShaderProperty(_Backlight, "Backlit Panel(LCD)");
 			m_MaterialEditor.TextureScaleOffsetProperty(_RGBSubPixelTex);
     	EditorGUILayout.Space();
         EditorGUILayout.Space();          
