@@ -1,9 +1,9 @@
 # RGBSubPixelDisplay-Shader
 A physically accurate screen shader, that displays the screen as subpixels. 
 
-Set the tiling of the texture to whatever the resolution of your screen is divided by two. 
 
-My texture contains 6 subpixels, two of each color, so you would have two whole pixels. 
+
+
 
 
 Any pixel texture marked as 2px will need to be set to your resolution / 2.
