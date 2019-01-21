@@ -8,6 +8,7 @@
     _shiftColor("Tiltshift Color", Color) = (0,0,0,1)
     _LightmapEmissionScale("Lightmap Emission Scale", Float) = 1
     _EmissionIntensity ("Screen Intensity", Float) = 1
+    _EmissionIntensity2 ("Screen Intensity - 2", Float) = 1
     [Toggle(APPLY_GAMMA)] _ApplyGamma("Apply Gamma", Float) = 0
     [Toggle] _Backlight("Backlit Panel", Int) = 0
     //Color Correction
@@ -19,7 +20,7 @@
     _BlueScale("Blue Scale", Range(-1,1)) = 1
   //END OF REQUIRED PROPERTIES FOR CGINC
     
-    
+    [HideInInspector] _texcoord2( "", 2D ) = "white" {}
     //needs to be here so the editor script stops throwing errors.
     //You can ignore it, just don't delete it. It doesn't actually do anything,
     //but without it, the editor script screams in pain. Hacky, I know.
@@ -43,12 +44,14 @@
     //You will need to define your texture samplers yourself in other shaders
       sampler2D _MainTex;
       sampler2D _RGBSubPixelTex;
+      
 
       float _Glossiness;
+      float _EmissionIntensity2;
       
       struct Input {
         float2 uv_MainTex;
-        float2 uv_RGBSubPixelTex;
+        float2 uv_texcoord2;
         float3 viewDir;
         float3 worldNormal;
       };
@@ -66,11 +69,11 @@
       //We need to call our function from the CGInc "RGBSubPixelConvert", 
       //and then feed in our MainTex, our SubPixel Tex, 
       //The UVs for both, the viewDir, and the WorldNormal.
-        float4 finalCol = RGBSubPixelConvert(_MainTex, _RGBSubPixelTex, IN.uv_MainTex, IN.uv_RGBSubPixelTex, viewDir, worldNormal);
+        float4 finalCol = RGBSubPixelConvert(_MainTex, _RGBSubPixelTex, IN.uv_MainTex, IN.uv_texcoord2, viewDir, worldNormal);
 
         o.Albedo = float4(0,0,0,1);
         o.Alpha = 1;
-        o.Emission = finalCol;
+        o.Emission = finalCol * _EmissionIntensity2;
         o.Metallic = 0;
         o.Smoothness = _Glossiness;
       }

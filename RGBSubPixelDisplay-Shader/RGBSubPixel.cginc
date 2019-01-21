@@ -5,6 +5,9 @@
       float4 _shiftColor;
       float _Backlight;
 
+      //uv
+      float4 _RGBSubPixelTex_ST;
+
       //Color Correction
       float _Saturation;
       float _RedScale;
@@ -15,6 +18,7 @@
       float4 RGBSubPixelConvert(sampler2D MainTex, sampler2D RGBTex, float2 uv0, float2 uv1, float3 viewDir, float3 worldNormal)
       {
       //our emission map
+        uv0 = round(uv0 * _RGBSubPixelTex_ST.xy) / _RGBSubPixelTex_ST.xy;
 			  float4 e = tex2D (MainTex, uv0);
 
       //viewing angle for tilt shift
@@ -36,6 +40,9 @@
         e = pow(e, _Contrast);
 
       //do RGB pixels
+        //uv1 = round((uv1 *_RGBSubPixelTex_ST.xy) / _RGBSubPixelTex_ST.xy);
+        uv1 *= _RGBSubPixelTex_ST.xy + _RGBSubPixelTex_ST.zw;
+        //uv1 *= _RGBSubPixelTex_ST.xy;
         float4 rgbpixel = tex2D(RGBTex, uv1);
 
         float backlight = dot(rgbpixel, 0.5);
@@ -58,7 +65,7 @@
         pixelR += backlight * rgbpixel.r;
         pixelG += backlight * rgbpixel.g;
         pixelB += backlight * rgbpixel.b;
-      
+
       //return all of our pixel values in a float3
         float3 pixelValue = float3(pixelR, pixelG, pixelB);
 

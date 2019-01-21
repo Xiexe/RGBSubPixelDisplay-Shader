@@ -28,6 +28,7 @@ public class XS_RgbEditor : ShaderGUI
     MaterialProperty _GreenScale;
     MaterialProperty _BlueScale;
     MaterialProperty _Backlight;
+    MaterialProperty _EmissionIntensity2;
 
     public override void OnGUI(MaterialEditor m_MaterialEditor, MaterialProperty[] props)
     {
@@ -48,6 +49,7 @@ public class XS_RgbEditor : ShaderGUI
             _GreenScale = ShaderGUI.FindProperty("_GreenScale", props);
             _BlueScale = ShaderGUI.FindProperty("_BlueScale", props);
             _Backlight = ShaderGUI.FindProperty("_Backlight", props);
+            _EmissionIntensity2	= ShaderGUI.FindProperty("_EmissionIntensity2", props);
         }
 
         EditorGUI.BeginChangeCheck();
@@ -75,6 +77,8 @@ public class XS_RgbEditor : ShaderGUI
             m_MaterialEditor.ShaderProperty(_ApplyGamma, "Apply Gamma Fix");
 		EditorGUILayout.Space();
 		EditorGUILayout.Space();
+        //hacks
+            m_MaterialEditor.ShaderProperty(_EmissionIntensity2, "Emission Hack");
 			
         }
         DoFooter();
