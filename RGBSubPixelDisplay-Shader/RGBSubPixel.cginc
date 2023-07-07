@@ -41,7 +41,8 @@
 
       //do RGB pixels
         //uv1 = round((uv1 *_RGBSubPixelTex_ST.xy) / _RGBSubPixelTex_ST.xy);
-        uv1 *= _RGBSubPixelTex_ST.xy + _RGBSubPixelTex_ST.zw;
+        //*= is right associative so uv1 *= ( S + T ) but we want uv1 * S + T. Thanks StreliaCopy.
+        uv1 = (uv1 * _RGBSubPixelTex_ST.xy) + _RGBSubPixelTex_ST.zw;
         //uv1 *= _RGBSubPixelTex_ST.xy;
         float4 rgbpixel = tex2D(RGBTex, uv1);
 
